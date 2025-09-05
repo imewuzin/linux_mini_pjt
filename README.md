@@ -1,7 +1,7 @@
 # [Linux Server] CPU Monitor & Alert System
 
 > Ubuntu 환경에서 `sar`, `awk`, `cron`, `msmtp`를 활용해 쉘 스크립트를 작성하여 CPU 사용량을 모니터링하고,
-기준치를 초과하면 로그와 함께 **경고 메일**을 자동 발송하는 시스템을 구축하여 모니터링을 원활하게 하였습니다.
+기준치를 초과하면 로그와 함께 경고 메일을 **자동 발송**하는 시스템을 구축하여 모니터링을 원활하게 하였습니다.
 
 ### 주요 특징
 - cron을 활용하여 CPU 사용량 측정 자동화
@@ -15,7 +15,7 @@
 ## **팀원 소개**
 | 팀원 | 프로필 | 회고 |
 | ---- | ------ | ------ |
-| [임유진](https://github.com/imewuzin) | <img width="150px" src="https://avatars.githubusercontent.com/u/156065214?v=4"/> | 구현 과정에서 msmtp 인증 오류와 cron 실행 문제를 해결하며 리눅스 환경에서의 <br>보안 설정과 자동화 개념을 이해하게 되었습니다.<br>이번 경험을 통해 앞으로는 이런 개별 기능 구현에 그치지 않고, 리눅스 전반에 대한 학습을 더욱<br> 체계적으로 이어가야겠다고 느꼈습니다. |
+| [임유진](https://github.com/imewuzin) | <img width="150px" src="https://avatars.githubusercontent.com/u/156065214?v=4"/> | 구현 과정에서 msmtp 인증 오류와 cron 실행 문제를 해결하며 단순한 스크립트 작성 이상의 경험을 얻을 수 있었습니다. <br> 이를 통해 리눅스 환경에서의 보안 설정, 자원 관리, 자동화가 시스템 안정성에 얼마나 중요한지 체감했습니다. <br> 이번 프로젝트를 계기로 앞으로는 서버와 인프라 전반을 아우르며, 안정적이고 확장 가능한 시스템을 설계할 수 있는 엔지니어로 성장하고자 합니다. |
 | [이용훈](https://github.com/dldydgns) | <img width="150px" src="https://avatars.githubusercontent.com/u/56614731?v=4"/> | CPU 점유율 계산과 msmtp 트러블슈팅을 직접 경험하며, 멀티코어 환경에서의 <br>정확한 리소스 모니터링과 안전한 메일 발송 설정의 중요성을 체감했습니다.<br>앞으로는 스크립트 안정성과 로그 관리, 알림 시스템 최적화에도 신경을 쓰고자 합니다. |
 
 
@@ -23,7 +23,7 @@
 
 ## 시스템 구성
 
-Operating System: Ubuntu 24.04.2 (VirtualBox VM)
+Operating System: **Ubuntu 24.04.2 (VirtualBox VM)**
 
 | apt install                  | 역할                                    |
 | ---------------------- | ------------------------------------- |
@@ -33,9 +33,9 @@ Operating System: Ubuntu 24.04.2 (VirtualBox VM)
 | **msmtp (Naver SMTP)** | 알림 메일 발송                           |
 | **stress**             | CPU 부하 테스트 및 시뮬레이션            |
 
-| Tools | 용도 |
+| Tools | 역할 |
 | ---- | ---- |
-| **VS Code (Remote - SSH)** | VS Code를 통해 원격 서버에 SSH 접속, 코드 편집 및 관리 |
+| **VS Code (Remote - SSH)** | 원격 서버에 SSH 접속, 코드 편집 및 관리 |
 
 ---
 
@@ -65,7 +65,7 @@ sudo apt install -y sysstat msmtp msmtp-mta bc
     port 587
     from yourid@naver.com
     user yourid@naver.com
-    password 발급받은앱비밀번호
+    password xxx(발급받은앱비밀번호)
 
     account default : naver
     ```
@@ -115,25 +115,21 @@ crontab -e
 ### ⑥ CPU 부하 테스트
 - 여러 cpu에 부하를 주어 프로세스별 점유 비율 확인
 
-```bash
-stress --cpu 4
-```
-
-* `cpu_usage.log` → 모든 CPU 사용량 기록
-* `cpu_alert.log` → 기준치 초과 시 경고 기록
-* 네이버 메일 → 경고 메일 수신
+  ```bash
+  stress --cpu 4
+  ```
 
 ---
 
 ## 결과
 
-#### cpu_usage.log
+#### cpu_usage.log → 모든 CPU 사용량 기록
 ![cpu_usage.log](./images/cpu_log.png)
 
-#### cpu_alert.log
+#### cpu_alert.log → 기준치 초과 시 경고 기록
 ![cpu_alert.log](./images/cpu_alert.png)
 
-#### 메일
+#### 메일 → 경고 메일 수신
 
 ![mail.png](./images/mail.png)
 
@@ -152,61 +148,57 @@ stress --cpu 4
 
 ### 2. **msmtp 메일 전송**
 
-#### 1️⃣ 루트계정과 ubuntu계정의 홈 디렉토리가 다르다
-```bash
-ubuntu@myserver00:~/01.awk$ sudo su
-root@fisa:/home/ubuntu/01.awk# echo "test" | msmtp -a gmail agahong1@gmail.com
-msmtp: account gmail not found: no configuration file available
-```
-- **원인:** msmtp는 실행 계정의 홈 디렉토리(`~/.msmtprc`)에서 설정 파일을 찾음  
-- 루트 계정으로 진임해 메일을 전송하면 `/root/.msmtprc`를 찾게 되어 Ubuntu 계정 설정 파일을 인식하지 못함  
-
----
-
-#### 2️⃣ 권한 문제로 실행이 거부됨
-```bash
-ubuntu@myserver00:~/01.awk$ sudo echo "Test mail body" | msmtp agahong1@gmail.com
-msmtp: /home/ubuntu/.msmtprc: contains secrets and therefore must have no more than user read/write permissions
-```
-- **원인:** `.msmtprc` 권한이 너무 열려 있어 msmtp가 안전하지 않다고 판단  
-- **해결:** 권한을 소유자만 읽고 쓰기 가능하도록 제한
-```bash
-chmod 600 /home/ubuntu/.msmtprc
-```
-- 이후 Ubuntu 계정에서 다시 메일 전송 테스트 시 정상 동작  
-
----
-
-#### ✅ 핵심 포인트
-1. msmtp는 **실행 계정의 홈 디렉토리**에서 설정 파일을 읽음  
-2. `.msmtprc`는 **소유자만 읽기/쓰기 가능하도록 권한 제한 필요**  
-3. 루트 계정에서 실행 시, 설정 파일 위치와 권한 확인 필수
+ #### 1️⃣ 루트계정과 ubuntu계정의 홈 디렉토리가 다르다
+ ```bash
+ ubuntu@myserver00:~/01.awk$ sudo su
+ root@fisa:/home/ubuntu/01.awk# echo "test" | msmtp -a gmail agahong1@gmail.com
+ msmtp: account gmail not found: no configuration file available
+ ```
+ - **원인:** msmtp는 실행 계정의 홈 디렉토리(`~/.msmtprc`)에서 설정 파일을 찾음  
+ - 루트 계정으로 진임해 메일을 전송하면 `/root/.msmtprc`를 찾게 되어 Ubuntu 계정 설정 파일을 인식하지 못함  
+ 
+ #### 2️⃣ 권한 문제로 실행이 거부됨
+ ```bash
+ ubuntu@myserver00:~/01.awk$ sudo echo "Test mail body" | msmtp agahong1@gmail.com
+ msmtp: /home/ubuntu/.msmtprc: contains secrets and therefore must have no more than user read/write permissions
+ ```
+ - **원인:** `.msmtprc` 권한이 너무 열려 있어 msmtp가 안전하지 않다고 판단  
+ - **해결:** 권한을 소유자만 읽고 쓰기 가능하도록 제한
+ ```bash
+ chmod 600 /home/ubuntu/.msmtprc
+ ```
+ - 이후 Ubuntu 계정에서 다시 메일 전송 테스트 시 정상 동작  
+ 
+ #### ✅ 핵심 포인트
+ 1. msmtp는 **실행 계정의 홈 디렉토리**에서 설정 파일을 읽음  
+ 2. `.msmtprc`는 **소유자만 읽기/쓰기 가능하도록 권한 제한 필요**  
+ 3. 루트 계정에서 실행 시, 설정 파일 위치와 권한 확인 필수
 
 ---
 
 ### 3. CPU 점유율 표기 방식 변경
-
-#### 문제
-- `ps` 명령으로 `%CPU`를 확인하면 **각 코어별 점유율**이 합산되어 표시됨
-- 멀티코어 시스템에서 프로세스 점유율 합계가 100%를 초과하는 현상 발생
-
-#### 해결
-- **전체 CPU 대비 점유율 계산**: 프로세스 점유율을 **CPU 코어 수로 나눔**
-- 예시 (4코어 시스템): 프로세스 점유율 200% → 전체 CPU 대비 50%
-
-```bash
-NUM_CORES=$(nproc)
-ps -eo pid,ppid,comm,%mem,%cpu --sort=-%cpu | head -n 5 | \
-awk -v cores="$NUM_CORES" '{printf "%7s %7s %-15s %5s %7.2f\n", $1,$2,$3,$4,$5/cores}'
-```
-
-#### ✅ 핵심 포인트
-1. 멀티코어 환경에서 `%CPU`는 **각 코어 기준**으로 계산됨
-2. 전체 CPU 대비 점유율을 구하려면 **코어 수로 나누어야 정확한 값**
-3. 이렇게 하면 메일이나 모니터링 그래프에서 실제 CPU 점유율을 올바르게 표시 가능
-
-#### 참고사진
-- 4코어 stress 부여
-<img width="403" height="220" alt="image" src="https://github.com/user-attachments/assets/827babc5-cde6-4d50-8dd7-231826be4d5a" />
-
+ 
+ #### 문제
+ - `ps` 명령으로 `%CPU`를 확인하면 **각 코어별 점유율**이 합산되어 표시됨
+ - 멀티코어 시스템에서 프로세스 점유율 합계가 100%를 초과하는 현상 발생
+ 
+ #### 해결
+ - **전체 CPU 대비 점유율 계산**: 프로세스 점유율을 **CPU 코어 수로 나눔**
+ - 예시 (4코어 시스템): 프로세스 점유율 200% → 전체 CPU 대비 50%
+ 
+ ```bash
+ NUM_CORES=$(nproc)
+ ps -eo pid,ppid,comm,%mem,%cpu --sort=-%cpu | head -n 5 | \
+ awk -v cores="$NUM_CORES" '{printf "%7s %7s %-15s %5s %7.2f\n", $1,$2,$3,$4,$5/cores}'
+ ```
+ 
+ #### ✅ 핵심 포인트
+ 1. 멀티코어 환경에서 `%CPU`는 **각 코어 기준**으로 계산됨
+ 2. 전체 CPU 대비 점유율을 구하려면 **코어 수로 나누어야 정확한 값**
+ 3. 이렇게 하면 메일이나 모니터링 그래프에서 실제 CPU 점유율을 올바르게 표시 가능
+ 
+ #### 참고사진
+ - 4코어 stress 부여
+  <img width="403" height="220" alt="image" src="https://github.com/user-attachments/assets/827babc5-cde6-4d50-8dd7-231826be4d5a" />
+  
 
