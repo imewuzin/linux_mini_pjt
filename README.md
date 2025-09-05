@@ -1,10 +1,10 @@
-# CPU Monitor & Alert System
+# [Linux Server] CPU Monitor & Alert System
 
-> Ubuntu 환경에서 `sar`, `awk`, `cron`, `msmtp`를 활용해 CPU 사용량을 모니터링하고,
-기준치를 초과하면 로그와 함께 **경고 메일**을 자동 발송하는 시스템을 구축했습니다.
+> Ubuntu 환경에서 `sar`, `awk`, `cron`, `msmtp`를 활용해 쉘 스크립트를 작성하여 CPU 사용량을 모니터링하고,
+기준치를 초과하면 로그와 함께 **경고 메일**을 자동 발송하는 시스템을 구축하여 모니터링을 원활하게 하였습니다.
 
 ### 주요 특징
-- cron을 활용해 주기적으로 CPU 사용량 측정
+- cron을 활용하여 CPU 사용량 측정 자동화
 
 - `awk`로 로그 정제 및 추세 그래프 생성
 
@@ -13,22 +13,29 @@
 ---
 
 ## **팀원 소개**
+| 팀원 | 프로필 | 회고 |
+| ---- | ------ | ------ |
+| [임유진](https://github.com/imewuzin) | <img width="150px" src="https://avatars.githubusercontent.com/u/156065214?v=4"/> | 구현 과정에서 msmtp 인증 오류와 cron 실행 문제를 해결하며 리눅스 환경에서의 <br>보안 설정과 자동화 개념을 이해하게 되었습니다.<br>이번 경험을 통해 앞으로는 이런 개별 기능 구현에 그치지 않고, 리눅스 전반에 대한 학습을 더욱<br> 체계적으로 이어가야겠다고 느꼈습니다. |
+| [이용훈](https://github.com/dldydgns) | <img width="150px" src="https://avatars.githubusercontent.com/u/56614731?v=4"/> | CPU 점유율 계산과 msmtp 트러블슈팅을 직접 경험하며, 멀티코어 환경에서의 <br>정확한 리소스 모니터링과 안전한 메일 발송 설정의 중요성을 체감했습니다.<br>앞으로는 스크립트 안정성과 로그 관리, 알림 시스템 최적화에도 신경을 쓰고자 합니다. |
 
-| <img width="150px" src="https://avatars.githubusercontent.com/u/156065214?v=4"/> | <img width="150px" src="https://avatars.githubusercontent.com/u/56614731?v=4"/> |
-| -------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- |
-| [임유진](https://github.com/imewuzin)                                         | [이용훈](https://github.com/dldydgns)                                         |
 
 ---
 
 ## 시스템 구성
 
-| 구성 요소                  | 역할                    |
-| ---------------------- | --------------------- |
-| **sar (sysstat)**      | CPU 사용량 수집            |
-| **awk**                | 로그 파싱 및 추세 그래프 생성     |
-| **cron**               | 1분 단위 자동 실행           |
-| **msmtp (Naver SMTP)** | 알림 메일 발송              |
-| **Ubuntu (v24.04.2)**  | 실행 환경 (VirtualBox VM) |
+Operating System: Ubuntu 24.04.2 (VirtualBox VM)
+
+| apt install                  | 역할                                    |
+| ---------------------- | ------------------------------------- |
+| **sar (sysstat)**      | CPU 사용량 수집                         |
+| **cron**               | 1분 단위 자동 실행                       |
+| **awk**                | 로그 파싱 및 추세 그래프 생성             |
+| **msmtp (Naver SMTP)** | 알림 메일 발송                           |
+| **stress**             | CPU 부하 테스트 및 시뮬레이션            |
+
+| Tools | 용도 |
+| ---- | ---- |
+| **VS Code (Remote - SSH)** | VS Code를 통해 원격 서버에 SSH 접속, 코드 편집 및 관리 |
 
 ---
 
@@ -71,7 +78,7 @@ sudo apt install -y sysstat msmtp msmtp-mta bc
 
 ### ③ CPU 모니터링 스크립트 작성
 
-- `cpu_monitor.sh`:
+- <a href="https://github.com/imewuzin/linux_mini_pjt/blob/master/cpu_monitor.sh" target="_blank">`cpu_monitor.sh`</a>: 
 
     | 구성 요소           | 설명                                                                                                                                |
     | --------------- | --------------------------------------------------------------------------------------------------------------------------------- |
@@ -98,7 +105,7 @@ chmod +x cpu_monitor.sh
 crontab -e
 ```
 
-- 추가
+- 추가(cron 최소단위 1분마다 쉘 스크립트 실행)
 
     ```
     * * * * * /파일경로/cpu_monitor.sh
@@ -106,9 +113,10 @@ crontab -e
 
 
 ### ⑥ CPU 부하 테스트
+- 여러 cpu에 부하를 주어 프로세스별 점유 비율 확인
 
 ```bash
-stress --cpu 2 --timeout 120s
+stress --cpu 4
 ```
 
 * `cpu_usage.log` → 모든 CPU 사용량 기록
@@ -198,15 +206,7 @@ awk -v cores="$NUM_CORES" '{printf "%7s %7s %-15s %5s %7.2f\n", $1,$2,$3,$4,$5/c
 3. 이렇게 하면 메일이나 모니터링 그래프에서 실제 CPU 점유율을 올바르게 표시 가능
 
 #### 참고사진
+- 4코어 stress 부여
 <img width="403" height="220" alt="image" src="https://github.com/user-attachments/assets/827babc5-cde6-4d50-8dd7-231826be4d5a" />
 
 
----
-
-## 회고
-
-**임유진**
-> 구현 과정에서 msmtp 인증 오류와 cron 실행 문제를 해결하며 리눅스 환경에서의 보안 설정과 자동화 개념을 이해하게 되었다. 이번 경험을 통해 앞으로는 이런 개별 기능 구현에 그치지 않고, 리눅스 전반에 대한 학습을 더욱 체계적으로 이어가야겠다고 느꼈다.
-
-**이용훈**
-> CPU 점유율 계산과 msmtp 트러블슈팅을 직접 경험하며, 멀티코어 환경에서의 정확한 리소스 모니터링과 안전한 메일 발송 설정의 중요성을 체감했다. 앞으로는 스크립트 안정성과 로그 관리, 알림 시스템 최적화에도 신경을 쓰고자 한다.
